@@ -491,6 +491,34 @@ func TestGatewayHandlerWithCorruptContent(t *testing.T) {
 	testMetricsContainsResult(t, mustGetMetricsFactory(t, target), metricsEventGatewayRequest, metricsResultDecapsulationFailed)
 }
 
+// A body long enough to reach the KEM/KDF/AEAD identifiers, with garbage in
+// them, must be rejected with 400 rather than panicking. This is the shape of
+// the oblivious-relay keep-warm health probe (a 101-byte synthetic
+// message/ohttp-req). With the previously pinned ohttp-go
+// (v0.0.0-20230523152405-45fb0d05eb13) UnmarshalEncapsulatedRequest called
+// hpke.KEM.Scheme() before validating the identifier, panicking inside the
+// handler; net/http then aborted the connection and the Fly proxy surfaced a
+// 502 to the probe, so the relay fleet classified the gateway as down.
+func TestGatewayHandlerWithInvalidKEMIdentifier(t *testing.T) {
+	target := createMockEchoGatewayServer(t)
+
+	handler := http.HandlerFunc(target.gatewayHandler)
+
+	body := []byte("oblivious-relay health probe: synthetic message/ohttp-req, not a valid encapsulated request")
+	request, err := http.NewRequest(http.MethodPost, defaultEchoEndpoint, bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Add("Content-Type", "message/ohttp-req")
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, request)
+
+	if status := rr.Result().StatusCode; status != http.StatusBadRequest {
+		t.Fatal(fmt.Errorf("Result did not yield %d, got %d instead", http.StatusBadRequest, status))
+	}
+}
+
 func TestGatewayHandlerProtoHTTPRequestWithForbiddenTarget(t *testing.T) {
 	target := createMockEchoGatewayServer(t)
 
