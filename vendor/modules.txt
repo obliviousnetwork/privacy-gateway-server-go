@@ -11,7 +11,7 @@ github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash/v2 v2.2.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
-# github.com/chris-wood/ohttp-go v0.0.0-20230523152405-45fb0d05eb13
+# github.com/chris-wood/ohttp-go v0.0.0-20260203111830-f9c962f60892
 ## explicit; go 1.15
 github.com/chris-wood/ohttp-go
 # github.com/cloudflare/circl v1.3.7
