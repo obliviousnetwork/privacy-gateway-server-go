@@ -33,6 +33,11 @@ RUN apt-get update \
 # distroless does not have. The gateway binary above is fully static, so it
 # needs nothing from the base.
 FROM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c
+# distroless/static shipped a CA bundle; ubuntu:26.04 does not, and both the
+# gateway's outbound TLS and the agent's WebSocket to the hub need one.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG GIT_REVISION=unknown
 LABEL revision ${GIT_REVISION}
